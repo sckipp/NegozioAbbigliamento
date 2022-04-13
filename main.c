@@ -7,7 +7,10 @@
 #include <stdlib.h>
 
 //FILE progetto.h
-#define MAX 30
+#define MAX 50
+#define TAGLIE 4
+
+
 typedef struct accountUtente_Lista{
     char *nomeUtente;
     char *password;
@@ -15,12 +18,12 @@ typedef struct accountUtente_Lista{
     struct accountUtente_Lista *next;
 }accountUtenteLista;
 
-typedef struct abbigliamento{
+typedef struct abbigliamentoLista{
     char *nomeAbbigliamento;
-    int *taglieDisp;
+    int taglieDisp[TAGLIE];
 }abbigliamentoLista;
 
-typedef struct scarpe{
+typedef struct scarpelista{
     char *nomeScarpe;
     int *numeroDisp;
 }scarpeLista;
@@ -144,14 +147,36 @@ void registrazioneUtente(){
     popolamentoFile(nome, password);
 }
 void gestioneMagazzino(){
+    char capiArt[MAX];
+    char scarpeArt[MAX];
     FILE *abiti = NULL;
     FILE *scarpe = NULL;
 
-    abiti = fopen("abiti.txt", "a");
-    fclose(abiti);
+    int scelta = 1;
 
-    scarpe = fopen("scarpe.txt", "a");
-    fclose(scarpe);
+    printf("Seleziona un operazione (0 per annullare l'operazione)\n1 - Per inserire capi d'abbgliamento\n2 - Per inserire scarpe\n");
+    scanf("%d", &scelta);
+    fflush(stdin);
+    while(scelta != 0) {
+        if(scelta == 1) {
+            abiti = fopen("abiti.txt", "a");
+            printf("Inserisci il nome dell'abbigliamento\n");
+            fgets(capiArt, MAX, stdin);
+            fprintf(abiti, "%s", capiArt);
+            fclose(abiti);
+        }
+        if(scelta == 2) {
+            scarpe = fopen("scarpe.txt", "a");
+            printf("Inserisci il nome delle scarpe\n");
+            fgets(scarpeArt, MAX, stdin);
+            fprintf(scarpe, "%s", scarpeArt);
+            fclose(scarpe);
+        }
+        printf("Seleziona un operazione (0 per annullare l'operazione)\n1 Per inserire capi d'abbgliamento\n2 Per inserire scarpe\n");
+        scanf("%d", &scelta);
+        fflush(stdin);
+    }
+
 }
 
 //Gestione interfaccia
