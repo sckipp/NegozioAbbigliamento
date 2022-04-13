@@ -1,0 +1,3 @@
+C:/Users/domen/Desktop/LASD_C/progettoLASD/cmake-build-debug/CMakeFiles/progettoLASD.dir
+C:/Users/domen/Desktop/LASD_C/progettoLASD/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/domen/Desktop/LASD_C/progettoLASD/cmake-build-debug/CMakeFiles/rebuild_cache.dir
