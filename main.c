@@ -38,7 +38,7 @@ accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista);
 void freeLista (accountUtenteLista *testa);
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password);
 
-//FIlE funzioni.c
+//FILE funzioni.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,31 +74,25 @@ void allocazioneAccountUtenteLista (char *nome, char *password, accountUtenteLis
     tmp ->password = malloc(dimP * sizeof (char));
 
 }//Dovrebbe andare
-void stampaNodi (accountUtenteLista *accountLista){
+/*void stampaNodi (accountUtenteLista *accountLista){
     printf("Stampa della lista\n"); //Bugging purpose
     while(accountLista != NULL){
         printf("Nome Utente %s Password %s\n", accountLista ->nomeUtente, accountLista ->password);
         accountLista = accountLista ->next;
     }
-}//Debugging purpose
+}*///Debugging purpose
 accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista){
-    accountUtenteLista *tmp = NULL;
 
     FILE *fp = NULL;
     char stringa[MAX];
     char nome[MAX], password[MAX];
 
     fp = fopen("account.txt", "r");
+    freeLista(accountLista);
     while(fgets(stringa, MAX, fp) != NULL){
         sscanf(stringa, "%s %s", nome, password);
-        tmp = inserimentoTesta(tmp, nome, password);
+        accountLista = inserimentoTesta(accountLista, nome, password);
     }
-    accountLista = tmp;
-    freeLista(tmp);
-    if(tmp == NULL)
-        printf("tmp e' null, problema risolto\n");
-    else
-        printf("%s", tmp->nomeUtente);
     fclose(fp);
     return accountLista;
 }
@@ -147,8 +141,8 @@ void registrazioneUtente(){
     popolamentoFile(nome, password);
 }
 void gestioneMagazzino(){
-    char capiArt[MAX];
-    char scarpeArt[MAX];
+    char nomeCapo[MAX];
+    char nomeScarpe[MAX];
     FILE *abiti = NULL;
     FILE *scarpe = NULL;
 
@@ -156,25 +150,24 @@ void gestioneMagazzino(){
 
     printf("Seleziona un operazione (0 per annullare l'operazione)\n1 - Per inserire capi d'abbgliamento\n2 - Per inserire scarpe\n");
     scanf("%d", &scelta);
-    fflush(stdin);
     while(scelta != 0) {
         if(scelta == 1) {
             abiti = fopen("abiti.txt", "a");
             printf("Inserisci il nome dell'abbigliamento\n");
-            fgets(capiArt, MAX, stdin);
-            fprintf(abiti, "%s", capiArt);
+
+            fgets(nomeCapo, MAX, stdin);
+            fprintf(abiti, "%s", nomeCapo);
             fclose(abiti);
         }
         if(scelta == 2) {
             scarpe = fopen("scarpe.txt", "a");
             printf("Inserisci il nome delle scarpe\n");
-            fgets(scarpeArt, MAX, stdin);
-            fprintf(scarpe, "%s", scarpeArt);
+            fgets(nomeScarpe, MAX, stdin);
+            fprintf(scarpe, "%s", nomeScarpe);
             fclose(scarpe);
         }
         printf("Seleziona un operazione (0 per annullare l'operazione)\n1 Per inserire capi d'abbgliamento\n2 Per inserire scarpe\n");
         scanf("%d", &scelta);
-        fflush(stdin);
     }
 
 }
@@ -189,13 +182,29 @@ accountUtenteLista *loginUtente (accountUtenteLista  *utenteLoggato, char *nomeU
     fgets(password, MAX, stdin);
     password[strcspn(password, "\n")] = 0;
 
-    utenteLoggato = confrontoCredenzialiConDB(accountLista, nomeUtente, password); //funziona anche senza l'assegnazione - - - Domandare ad Andrea
+    utenteLoggato = confrontoCredenzialiConDB(accountLista, nomeUtente, password);
 
-    if(utenteLoggato != NULL)
-        printf("\nUtente %s %s riconosciuto con successo\n", utenteLoggato->nomeUtente, utenteLoggato ->password);
-    else
+    if(utenteLoggato != NULL) {
+        printf("\nUtente %s %s riconosciuto con successo\n", utenteLoggato->nomeUtente, utenteLoggato->password);
+        return utenteLoggato;
+    }
+    else {
         printf("Hai inserito le credenziali sbagliate\n\n");
-    return utenteLoggato;
+        return NULL;
+    }
+}
+void *operazioni (accountUtenteLista *utenteLoggato){
+
+    int scelta;
+
+    if(utenteLoggato != NULL) {
+        printf("1 - Mostra capi d'abbigliamento\n2 - Ricarica il tuo conto virtuale\n3 - Preleva soldi dal tuo conto virtuale\n"
+               "4 - Carrello\n0 - Per tornare alla home\nInserisci operazione : ");
+        scanf(" %d", &scelta);
+    }
+    else{
+        printf("Credenziali sbagliate (funzione operazioni)\n");
+    }
 }
 //FILE main.c
 int main() {
@@ -205,6 +214,7 @@ int main() {
     char nome[MAX];
     char pass[MAX];
     int scelta;
+
     do {
     printf("Benvenuto nel negozio virtuale!!\n"
                   "Scegli quale operazione effettuare (-1 per uscire dal negozio)\n"
@@ -220,6 +230,7 @@ int main() {
                 printf("Inserisci lo username e la password per accedere al tuo profilo\n");
                 accountLista = inserimentoAccountLista(accountLista);
                 utenteloggato = loginUtente(utenteloggato, nome, pass, accountLista);
+                operazioni(utenteloggato);
                 break;
             case 2:
                 printf("Hai selezionato la registrazione utente\n");
