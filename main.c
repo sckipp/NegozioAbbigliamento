@@ -35,8 +35,9 @@ void popolamentoFile(char *nome, char *password);
 void registrazioneUtente();
 accountUtenteLista *loginUtente (accountUtenteLista  *utenteLoggato, char *nomeUtente, char *password, accountUtenteLista *accountLista);
 accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista);
-void freeLista (accountUtenteLista *testa);
+accountUtenteLista *freeLista (accountUtenteLista *testa);
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password);
+void *operazioni (accountUtenteLista *utenteLoggato);
 
 //FILE funzioni.c
 #include <stdio.h>
@@ -74,13 +75,14 @@ void allocazioneAccountUtenteLista (char *nome, char *password, accountUtenteLis
     tmp ->password = malloc(dimP * sizeof (char));
 
 }//Dovrebbe andare
-/*void stampaNodi (accountUtenteLista *accountLista){
-    printf("Stampa della lista\n"); //Bugging purpose
+void stampaNodi (accountUtenteLista *accountLista){
+    printf("\n\n\nStampa della lista\n\n\n\n"); //Debugging purpose
     while(accountLista != NULL){
         printf("Nome Utente %s Password %s\n", accountLista ->nomeUtente, accountLista ->password);
         accountLista = accountLista ->next;
     }
-}*///Debugging purpose
+    printf("\n\n\n");
+}
 accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista){
 
     FILE *fp = NULL;
@@ -88,7 +90,7 @@ accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista){
     char nome[MAX], password[MAX];
 
     fp = fopen("account.txt", "r");
-    freeLista(accountLista);
+    accountLista = freeLista(accountLista); //Causa crash
     while(fgets(stringa, MAX, fp) != NULL){
         sscanf(stringa, "%s %s", nome, password);
         accountLista = inserimentoTesta(accountLista, nome, password);
@@ -96,7 +98,7 @@ accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista){
     fclose(fp);
     return accountLista;
 }
-void freeLista (accountUtenteLista *testa){
+accountUtenteLista *freeLista (accountUtenteLista *testa){
     accountUtenteLista *tmp = NULL;
 
         while (testa != NULL) {
@@ -104,17 +106,16 @@ void freeLista (accountUtenteLista *testa){
             testa = testa->next;
             free(tmp);
         }
-
+        return testa;
 }
-
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password){
     accountUtenteLista *tmp = accountLista;
+
     while(tmp != NULL){
         if((strcmp(nomeUtente, tmp->nomeUtente) == 0) && (strcmp(password, tmp ->password) == 0)) {
             return tmp;
         }
-        else
-        tmp = tmp ->next;
+        tmp = tmp->next;
     }
         return NULL;
 }
@@ -189,23 +190,43 @@ accountUtenteLista *loginUtente (accountUtenteLista  *utenteLoggato, char *nomeU
         return utenteLoggato;
     }
     else {
-        printf("Hai inserito le credenziali sbagliate\n\n");
+        printf("Hai inserito le credenziali sbagliate\nReinseriscile\n");
         return NULL;
     }
 }
 void *operazioni (accountUtenteLista *utenteLoggato){
 
     int scelta;
-
-    if(utenteLoggato != NULL) {
+    float importo;
+    do {
         printf("1 - Mostra capi d'abbigliamento\n2 - Ricarica il tuo conto virtuale\n3 - Preleva soldi dal tuo conto virtuale\n"
                "4 - Carrello\n0 - Per tornare alla home\nInserisci operazione : ");
-        scanf(" %d", &scelta);
-    }
-    else{
-        printf("Credenziali sbagliate (funzione operazioni)\n");
-    }
+        scanf("%d", &scelta);
+        fflush(stdin);
+        switch (scelta) {
+            case 2:
+                printf("Inserisci l'importo");
+                scanf("%f", &importo);
+                utenteLoggato->bilancio_conto += importo;
+                break;
+            case 3: {
+                printf("Preleva i soldi dal tuo conto\n");
+                scanf("%f", &importo);
+                if (utenteLoggato->bilancio_conto >= importo)
+                    utenteLoggato->bilancio_conto -= importo;
+                else
+                    printf("Impossibile completare l'operazione...\nBilancio non sufficiente\n");
+                break;
+            }
+            case -1:
+                printf("Annullamento dell'operazione\n");
+                break;
+            default:
+                printf("Hai inserito un operazione sconosciuta...\nReinserire l'operazione\n");
+        }
+    }while(scelta != -1);
 }
+
 //FILE main.c
 int main() {
 
@@ -229,7 +250,8 @@ int main() {
             case 1:
                 printf("Inserisci lo username e la password per accedere al tuo profilo\n");
                 accountLista = inserimentoAccountLista(accountLista);
-                utenteloggato = loginUtente(utenteloggato, nome, pass, accountLista);
+                while(utenteloggato == NULL)//Inserisci le credenziali ogni volta che fallisce il login.
+                    utenteloggato = loginUtente(utenteloggato, nome, pass, accountLista);
                 operazioni(utenteloggato);
                 break;
             case 2:
@@ -247,7 +269,6 @@ int main() {
                 printf("\nHai inserito un operazione sconosciuta...\nReinserisci l'operazione da eseguire.\n");
                 break;
         }
-        system("pause");
     }while(scelta != -1);
 
 }
