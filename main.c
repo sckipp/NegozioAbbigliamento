@@ -149,8 +149,9 @@ void gestioneMagazzino(){
 
     int scelta = 1;
 
-    printf("Seleziona un operazione (0 per annullare l'operazione)\n1 - Per inserire capi d'abbgliamento\n2 - Per inserire scarpe\n");
+    printf("Seleziona un operazione (0 per annullare l'operazione)\n1 - Per inserire capi d'abbgliamento\n2 - Per inserire scarpe\nScelta : ");
     scanf("%d", &scelta);
+    fflush(stdin);
     while(scelta != 0) {
         if(scelta == 1) {
             abiti = fopen("abiti.txt", "a");
@@ -167,8 +168,13 @@ void gestioneMagazzino(){
             fprintf(scarpe, "%s", nomeScarpe);
             fclose(scarpe);
         }
-        printf("Seleziona un operazione (0 per annullare l'operazione)\n1 Per inserire capi d'abbgliamento\n2 Per inserire scarpe\n");
+        printf("Seleziona un operazione (0 per annullare l'operazione)\n1 Per inserire capi d'abbgliamento\n2 Per inserire scarpe\nScelta : ");
         scanf("%d", &scelta);
+        fflush(stdin);
+        if(scelta == 0) {
+            printf("Uscita dal menu in corso...\n");
+            system("pause");
+        }
     }
 
 }
@@ -196,6 +202,9 @@ accountUtenteLista *loginUtente (accountUtenteLista  *utenteLoggato, char *nomeU
 }
 void *operazioni (accountUtenteLista *utenteLoggato){
 
+    scarpeLista *scarpe = NULL;
+    abbigliamentoLista  *abbigliamento = NULL;
+
     int scelta;
     float importo;
     do {
@@ -204,16 +213,19 @@ void *operazioni (accountUtenteLista *utenteLoggato){
         scanf("%d", &scelta);
         fflush(stdin);
         switch (scelta) {
+            case 1:
+
+                break;
             case 2:
                 printf("Inserisci l'importo");
                 scanf("%f", &importo);
-                utenteLoggato->bilancio_conto += importo;
+                utenteLoggato ->bilancio_conto += importo;
                 break;
             case 3: {
                 printf("Preleva i soldi dal tuo conto\n");
                 scanf("%f", &importo);
-                if (utenteLoggato->bilancio_conto >= importo)
-                    utenteLoggato->bilancio_conto -= importo;
+                if (utenteLoggato ->bilancio_conto >= importo)
+                    utenteLoggato ->bilancio_conto -= importo;
                 else
                     printf("Impossibile completare l'operazione...\nBilancio non sufficiente\n");
                 break;
@@ -224,7 +236,10 @@ void *operazioni (accountUtenteLista *utenteLoggato){
             default:
                 printf("Hai inserito un operazione sconosciuta...\nReinserire l'operazione\n");
         }
+        system("pause");
     }while(scelta != -1);
+
+    scarpe = freeLista(scarpe);
 }
 
 //FILE main.c
