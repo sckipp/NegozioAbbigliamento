@@ -18,14 +18,14 @@ typedef struct accountUtente_Lista{
 }accountUtenteLista;
 
 typedef struct abbigliamentoLista{
-    char nomeAbbigliamento[100];
+    char *nomeAbbigliamento;
     int taglieDisp[TAGLIE];
     float prezzo;
     struct abbigliamentoLista *next;
 }abbigliamentoLista;
 
 typedef struct scarpelista{
-    char nomeScarpe[100];
+    char *nomeScarpe;
     int numeroDisp[10];
     float prezzo;
     struct scarpelista *next;
@@ -41,6 +41,8 @@ accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista);
 accountUtenteLista *freeAccount (accountUtenteLista *testa);
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password);
 void *operazioni (accountUtenteLista *utenteLoggato);
+void allocazioneAbbigliamentoLista (char *nome,  abbigliamentoLista *tmp);
+void allocazioneScarpeLista (char *nome, scarpeLista *tmp);
 
 //FILE funzioni.c
 #include <stdio.h>
@@ -94,6 +96,7 @@ abbigliamentoLista *creaNodoAbbigliamento (char *nomeAbbigliamento, float prezzo
         return NULL;
     else{
         tmp ->next = NULL;
+        allocazioneAbbigliamentoLista(nomeAbbigliamento, tmp);
         strcpy(tmp->nomeAbbigliamento,nomeAbbigliamento);
         tmp ->prezzo = prezzo;
     }
@@ -130,6 +133,7 @@ scarpeLista *creaNodoScarpe (char *nomeScarpe, float prezzo){
         return NULL;
     else{
         tmp ->next = NULL;
+        allocazioneScarpeLista(nomeScarpe, tmp);
         strcpy(tmp->nomeScarpe,nomeScarpe);
         tmp ->prezzo = prezzo;
     }
@@ -150,7 +154,7 @@ scarpeLista *popolamentoScarpeLista(scarpeLista *scarpe){
     char nome[100];
     float prezzo;
 
-    fp = fopen("abiti.txt", "r");
+    fp = fopen("scarpe.txt", "r");
     while(fgets(stringa, 100, fp) != NULL){
         sscanf(stringa, "%f %[^\n]s", &prezzo, nome);
         scarpe = inserimentoTestaScarpe(scarpe,nome, prezzo);
@@ -158,6 +162,7 @@ scarpeLista *popolamentoScarpeLista(scarpeLista *scarpe){
     return scarpe;
 }
 
+//Da aggiustare
 void allocazioneAccountUtenteLista (char *nome, char *password, accountUtenteLista *tmp){
     int dimN = 0, dimP = 0;
     dimN = strlen(nome);
@@ -165,12 +170,41 @@ void allocazioneAccountUtenteLista (char *nome, char *password, accountUtenteLis
     tmp ->nomeUtente = malloc(dimN * sizeof (char));
     tmp ->password = malloc(dimP * sizeof (char));
 
-}//Dovrebbe andare
-void stampaNodi (accountUtenteLista *accountLista){
+}
+void allocazioneAbbigliamentoLista (char *nome,  abbigliamentoLista *tmp){
+    int dimN = 0, dimP = 0;
+    dimN = strlen(nome);
+    tmp ->nomeAbbigliamento = malloc(dimN * sizeof (char));
+
+}
+void allocazioneScarpeLista (char *nome, scarpeLista *tmp){
+    int dimN = 0, dimP = 0;
+    dimN = strlen(nome);
+    tmp ->nomeScarpe = malloc(dimN * sizeof (char));
+
+}
+//Da aggiustare
+void stampaAccountLista (accountUtenteLista *accountLista){
     printf("\n\n\nStampa della lista\n\n\n\n"); //Debugging purpose
     while(accountLista != NULL){
         printf("Nome Utente %s Password %s\n", accountLista ->nomeUtente, accountLista ->password);
         accountLista = accountLista ->next;
+    }
+    printf("\n\n\n");
+}
+void stampaScarpeLista (scarpeLista *scarpe){
+    printf("\nStampa della lista scarpe\n"); //Debugging purpose
+    while(scarpe != NULL){
+        printf("%s %.2f\n", scarpe ->nomeScarpe, scarpe ->prezzo);
+        scarpe = scarpe ->next;
+    }
+    printf("\n\n\n");
+}
+void stampAbbigliamentoLista (abbigliamentoLista *abbigliamento){
+    printf("\nStampa della lista abbigliamento\n"); //Debugging purpose
+    while(abbigliamento != NULL){
+        printf("%s %.2f\n", abbigliamento ->nomeAbbigliamento, abbigliamento ->prezzo);
+        abbigliamento = abbigliamento ->next;
     }
     printf("\n\n\n");
 }
@@ -206,7 +240,6 @@ abbigliamentoLista *freeAbbigl (abbigliamentoLista *testa){
     }
     return NULL;
 }
-
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password){
     accountUtenteLista *tmp = accountLista;
 
@@ -268,7 +301,7 @@ void gestioneMagazzino(){
             printf("Inserisci il nome delle scarpe\n");
             fgets(nomeScarpe, MAX, stdin);
             printf("Inserisci il prezzo\n");
-            printf("Inserisci il prezzo\n");
+            scanf("%d", &prezzo);
             fprintf(scarpe, "%f %s", prezzo, nomeScarpe);
             fclose(scarpe);
         }
@@ -321,7 +354,8 @@ void *operazioni (accountUtenteLista *utenteLoggato){
                 printf("DEBUGGING PURPOSE\n\n\n");
                 abbigliamento = popolamentoAbbigliamentoLista(abbigliamento);
                 scarpe = popolamentoScarpeLista(scarpe);
-                //Bisoigna fare la stampa di entrambi
+                stampAbbigliamentoLista(abbigliamento);
+                stampaScarpeLista(scarpe);
                 break;
             case 2:
                 printf("Inserisci l'importo");
