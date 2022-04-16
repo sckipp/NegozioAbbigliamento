@@ -112,13 +112,13 @@ abbigliamentoLista *inserimentoTestaAbbigliamento (abbigliamentoLista *abbigliam
     return tmp;
 }
 abbigliamentoLista *popolamentoAbbigliamentoLista(abbigliamentoLista *abbigliamento){
-    FILE *capiFile = NULL;
+    FILE *fp = NULL;
     char stringa[100];
     char nome[100];
     float prezzo;
 
-    capiFile = fopen("abiti.txt", "r");
-    while(fgets(stringa, 100, capiFile) != NULL){
+    fp = fopen("abiti.txt", "r");
+    while(fgets(stringa, 100, fp) != NULL){
         sscanf(stringa, "%f %[^\n]s", &prezzo, nome);
         abbigliamento = inserimentoTestaAbbigliamento(abbigliamento,nome, prezzo);
     }
@@ -136,6 +136,7 @@ scarpeLista *creaNodoScarpe (char *nomeScarpe, float prezzo){
         allocazioneScarpeLista(nomeScarpe, tmp);
         strcpy(tmp->nomeScarpe,nomeScarpe);
         tmp ->prezzo = prezzo;
+        printf("\n\nTEST TMP PREZZO %.2f", tmp->prezzo);
     }
     return tmp;
 }
@@ -157,6 +158,7 @@ scarpeLista *popolamentoScarpeLista(scarpeLista *scarpe){
     fp = fopen("scarpe.txt", "r");
     while(fgets(stringa, 100, fp) != NULL){
         sscanf(stringa, "%f %[^\n]s", &prezzo, nome);
+        printf("\n\nTEST 2 %.2f", prezzo);
         scarpe = inserimentoTestaScarpe(scarpe,nome, prezzo);
     }
     return scarpe;
@@ -172,17 +174,18 @@ void allocazioneAccountUtenteLista (char *nome, char *password, accountUtenteLis
 
 }
 void allocazioneAbbigliamentoLista (char *nome,  abbigliamentoLista *tmp){
-    int dimN = 0, dimP = 0;
+    int dimN = 0;
     dimN = strlen(nome);
     tmp ->nomeAbbigliamento = malloc(dimN * sizeof (char));
 
 }
 void allocazioneScarpeLista (char *nome, scarpeLista *tmp){
-    int dimN = 0, dimP = 0;
+    int dimN = 0;
     dimN = strlen(nome);
     tmp ->nomeScarpe = malloc(dimN * sizeof (char));
 
 }
+
 //Da aggiustare
 void stampaAccountLista (accountUtenteLista *accountLista){
     printf("\n\n\nStampa della lista\n\n\n\n"); //Debugging purpose
@@ -191,14 +194,15 @@ void stampaAccountLista (accountUtenteLista *accountLista){
         accountLista = accountLista ->next;
     }
     printf("\n\n\n");
-}
+} //Da cancellare
+
 void stampaScarpeLista (scarpeLista *scarpe){
     printf("\nStampa della lista scarpe\n"); //Debugging purpose
     while(scarpe != NULL){
         printf("%s %.2f\n", scarpe ->nomeScarpe, scarpe ->prezzo);
         scarpe = scarpe ->next;
     }
-    printf("\n\n\n");
+    printf("\n");
 }
 void stampAbbigliamentoLista (abbigliamentoLista *abbigliamento){
     printf("\nStampa della lista abbigliamento\n"); //Debugging purpose
@@ -206,7 +210,7 @@ void stampAbbigliamentoLista (abbigliamentoLista *abbigliamento){
         printf("%s %.2f\n", abbigliamento ->nomeAbbigliamento, abbigliamento ->prezzo);
         abbigliamento = abbigliamento ->next;
     }
-    printf("\n\n\n");
+    printf("\n");
 }
 
 //free delle liste
@@ -240,6 +244,7 @@ abbigliamentoLista *freeAbbigl (abbigliamentoLista *testa){
     }
     return NULL;
 }
+
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password){
     accountUtenteLista *tmp = accountLista;
 
@@ -301,7 +306,7 @@ void gestioneMagazzino(){
             printf("Inserisci il nome delle scarpe\n");
             fgets(nomeScarpe, MAX, stdin);
             printf("Inserisci il prezzo\n");
-            scanf("%d", &prezzo);
+            scanf("%f", &prezzo);
             fprintf(scarpe, "%f %s", prezzo, nomeScarpe);
             fclose(scarpe);
         }
@@ -387,7 +392,7 @@ void *operazioni (accountUtenteLista *utenteLoggato){
 //FILE main.c
 int main() {
 
-    accountUtenteLista *accountLista = NULL; //lista che tiene salvati i dati di tutti gli account
+    accountUtenteLista *accountLista = NULL;  //lista che tiene salvati i dati di tutti gli account
     accountUtenteLista *utenteloggato = NULL;//lista che tiene salvati i dati dell'account che ha effettuato l'accesso
     char nome[MAX];
     char pass[MAX];
