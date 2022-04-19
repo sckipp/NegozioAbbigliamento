@@ -1,2 +1,3 @@
-472.000000 Jordan air shoes
-98.000000 Minchia che scarpe SIUM
+55.000000 4 Scarpe
+99.000000 4 Scarpe Siummiche (apparate con la maglia)
+244.000000 0 Scarpe finite

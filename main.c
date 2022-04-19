@@ -7,7 +7,7 @@
 
 //FILE progetto.h
 #define MAX 50
-#define TAGLIE 4
+#define TAGLIE 3
 
 typedef struct accountUtente_Lista{
     char *nomeUtente;
@@ -19,7 +19,7 @@ typedef struct accountUtente_Lista{
 typedef struct abbigliamentoLista{
     int id;
     char *nomeAbbigliamento;
-    int taglieDisp[TAGLIE];
+    int disponibilita;
     float prezzo;
     struct abbigliamentoLista *next;
 }abbigliamentoLista;
@@ -27,7 +27,7 @@ typedef struct abbigliamentoLista{
 typedef struct scarpelista{
     int id;
     char *nomeScarpe;
-    int numeroDisp[10];
+    int disponibilita;
     float prezzo;
     struct scarpelista *next;
 }scarpeLista;
@@ -113,7 +113,7 @@ accountUtenteLista *freeAccount (accountUtenteLista *testa){
 }
 
 //lista dell'abbigliamento
-abbigliamentoLista *creaNodoAbbigliamento (char *nomeAbbigliamento, float prezzo, int id){
+abbigliamentoLista *creaNodoAbbigliamento (char *nomeAbbigliamento, float prezzo, int id, int disponibilita){
     /*srand(time(NULL));
     rand();*/
     abbigliamentoLista *tmp = NULL;
@@ -126,19 +126,20 @@ abbigliamentoLista *creaNodoAbbigliamento (char *nomeAbbigliamento, float prezzo
         strcpy(tmp->nomeAbbigliamento,nomeAbbigliamento);
         tmp ->id = id;
         tmp ->prezzo = prezzo;
+        tmp ->disponibilita = disponibilita;
         /*for(int i = 0; i < TAGLIE; i++)
             tmp ->taglieDisp[i] = rand()%5;*/
     }
     return tmp;
 }
-abbigliamentoLista *inserimentoCodaAbbigliamento (abbigliamentoLista *abbigliamento, char *nomeAbbigliamento, float prezzo, int id){
+abbigliamentoLista *inserimentoCodaAbbigliamento (abbigliamentoLista *abbigliamento, char *nomeAbbigliamento, float prezzo, int id, int disponibilita){
     abbigliamentoLista *tmp = abbigliamento;
 
     if(tmp == NULL)
-        return creaNodoAbbigliamento(nomeAbbigliamento, prezzo, id);
+        return creaNodoAbbigliamento(nomeAbbigliamento, prezzo, id, disponibilita);
     while(tmp ->next != NULL)
         tmp = tmp ->next;
-    tmp -> next = creaNodoAbbigliamento(nomeAbbigliamento, prezzo, id);
+    tmp -> next = creaNodoAbbigliamento(nomeAbbigliamento, prezzo, id, disponibilita);
     return abbigliamento;
 }
 void allocazioneAbbigliamentoLista (char *nome,  abbigliamentoLista *tmp){
@@ -152,25 +153,26 @@ abbigliamentoLista *popolamentoAbbigliamentoLista(abbigliamentoLista *abbigliame
     char stringa[100];
     char nome[100];
     float prezzo;
+    int disponibilita;
     int id =0;
     fp = fopen("abiti.txt", "r");
     abbigliamento = freeAbbigl(abbigliamento);
     while(fgets(stringa, 100, fp) != NULL){
-        sscanf(stringa, "%f %[^\n]s", &prezzo, nome);
+        sscanf(stringa, "%f %d %[^\n]s", &prezzo, &disponibilita, nome);
         id++;
-        abbigliamento = inserimentoCodaAbbigliamento(abbigliamento, nome, prezzo, id);
+        abbigliamento = inserimentoCodaAbbigliamento(abbigliamento, nome, prezzo, id, disponibilita);
     }
     *contatore = id;
     return abbigliamento;
 }
 void stampaAbbigliamentoLista (abbigliamentoLista *abbigliamento){
-    char tagl[]={'S', 'M', 'L', 'L'};
     printf("\nStampa della lista abbigliamento\n"); //Debugging purpose
     while(abbigliamento != NULL){
-        printf("%d - %s %.2f\n",abbigliamento ->id, abbigliamento ->nomeAbbigliamento, abbigliamento ->prezzo);
-        /*for(int i  = 0; i < TAGLIE; i++)
-            printf("%c: %d", tagl[i], abbigliamento ->taglieDisp[i]);
-        printf("\n");*/
+        printf("%d - %s %.2f ",abbigliamento ->id, abbigliamento ->nomeAbbigliamento, abbigliamento ->prezzo);
+        if(abbigliamento ->disponibilita >0)
+            printf("Disponibile\n");
+        else
+            printf("Ordinabile\n");
         abbigliamento = abbigliamento ->next;
     }
     printf("\n");
@@ -187,7 +189,7 @@ abbigliamentoLista *freeAbbigl (abbigliamentoLista *testa){
 }
 
 //lista delle scarpe
-scarpeLista *creaNodoScarpe (char *nomeScarpe, float prezzo, int id){
+scarpeLista *creaNodoScarpe (char *nomeScarpe, float prezzo, int id, int disponibilita){
     scarpeLista *tmp = NULL;
     tmp = malloc (sizeof (scarpeLista));
     if(tmp == NULL)
@@ -197,40 +199,46 @@ scarpeLista *creaNodoScarpe (char *nomeScarpe, float prezzo, int id){
         allocazioneScarpeLista(nomeScarpe, tmp);
         strcpy(tmp->nomeScarpe,nomeScarpe);
         tmp ->id = id;
+        tmp ->disponibilita = disponibilita;
         tmp ->prezzo = prezzo;
     }
     return tmp;
 }
-scarpeLista *inserimentoCodaScarpe (scarpeLista *scarpe, char *nomeScarpe, float prezzo, int id){
+scarpeLista *inserimentoCodaScarpe (scarpeLista *scarpe, char *nomeScarpe, float prezzo, int id, int disponibilita){
     scarpeLista *tmp = scarpe;
 
     if(scarpe == NULL)
-        return creaNodoScarpe(nomeScarpe, prezzo, id);
+        return creaNodoScarpe(nomeScarpe, prezzo, id, disponibilita);
     while(tmp ->next != NULL)
         tmp = tmp ->next;
-    tmp -> next = creaNodoScarpe(nomeScarpe, prezzo, id);
+    tmp -> next = creaNodoScarpe(nomeScarpe, prezzo, id,disponibilita);
     return scarpe;
 }
 scarpeLista *popolamentoScarpeLista(scarpeLista *scarpe, int contatore){
     FILE *fp = NULL;
     char stringa[100];
     char nome[100];
+    int disponibilita;
     float prezzo;
     int id = contatore;
     printf("stampa contatore %d", contatore);
     fp = fopen("scarpe.txt", "r");
     scarpe = freeScarpe(scarpe);
     while(fgets(stringa, 100, fp) != NULL){
-        sscanf(stringa, "%f %[^\n]s", &prezzo, nome);
+        sscanf(stringa, "%f %d %[^\n]s", &prezzo, &disponibilita, nome);
         contatore++;
-        scarpe = inserimentoCodaScarpe(scarpe, nome, prezzo, contatore);
+        scarpe = inserimentoCodaScarpe(scarpe, nome, prezzo, contatore, disponibilita);
     }
     return scarpe;
 }
 void stampaScarpeLista (scarpeLista *scarpe){
     printf("\nStampa della lista scarpe\n"); //Debugging purpose
     while(scarpe != NULL){
-        printf("%d - %s %.2f\n",scarpe ->id, scarpe ->nomeScarpe, scarpe ->prezzo);
+        printf("%d - %s %.2f ",scarpe ->id, scarpe ->nomeScarpe, scarpe ->prezzo);
+        if(scarpe ->disponibilita > 0)
+            printf("Disponibile\n");
+        else
+            printf("Ordinabile\n");
         scarpe = scarpe ->next;
     }
     printf("\n");
@@ -290,8 +298,11 @@ void gestioneMagazzino(){
     char nomeCapo[MAX];
     float prezzo;
     char nomeScarpe[MAX];
+    int disponibilita;
     FILE *abiti = NULL;
+    FILE *abitiTaglie = NULL;
     FILE *scarpe = NULL;
+    FILE *scarpeTaglie = NULL;
 
     int scelta = 1;
 
@@ -305,7 +316,9 @@ void gestioneMagazzino(){
             fgets(nomeCapo, MAX, stdin);
             printf("Inserisci il prezzo\n");
             scanf("%f", &prezzo);
-            fprintf(abiti, "%f %s", prezzo, nomeCapo);
+            printf("Inserisci quantita: ");
+            scanf("%d", &disponibilita);
+            fprintf(abiti, "%f %d %s", prezzo, disponibilita, nomeCapo);
             fclose(abiti);
         }
         if(scelta == 2) {
@@ -314,7 +327,9 @@ void gestioneMagazzino(){
             fgets(nomeScarpe, MAX, stdin);
             printf("Inserisci il prezzo\n");
             scanf("%f", &prezzo);
-            fprintf(scarpe, "%f %s", prezzo, nomeScarpe);
+            printf("Inserisci quantita: ");
+            scanf("%d", &disponibilita);
+            fprintf(scarpe, "%f %d %s", prezzo, disponibilita, nomeScarpe);
             fclose(scarpe);
         }
         printf("Seleziona un operazione (0 per annullare l'operazione)\n1 Per inserire capi d'abbgliamento\n2 Per inserire scarpe\nScelta : ");
