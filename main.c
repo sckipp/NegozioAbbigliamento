@@ -1,6 +1,8 @@
 /*
- * TO - DO SE FACCIO LOGIN ED ESCO DALL'ACCOUNT, SE RIOLGGO NON MI FA SCEGLIERE L'ACCOUNT (NECESSARIA FREE DI UTENTELOGGATO)
- *
+ * TO - DO
+ * SE FACCIO LOGIN ED ESCO DALL'ACCOUNT, SE RIOLGGO NON MI FA SCEGLIERE L'ACCOUNT (NECESSARIA FREE DI UTENTELOGGATO)
+ * IMPLEMENTARE COSA FARE IN CASO DI SALDO NON DISPONIBILE PER L'ACQUISTO
+ * IMPLEMENTARE CARRELLO
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,10 +34,10 @@ typedef struct scarpelista{
     struct scarpelista *next;
 }scarpeLista;
 
-accountUtenteLista *creaNodoAccount (char *nomeUtente, char *password);
-accountUtenteLista *inserimentoTestaAccount (accountUtenteLista *accountLista, char *nomeUtente, char *password);
+accountUtenteLista *creaNodoAccount (char *nomeUtente, char *password, float saldo);
+accountUtenteLista *inserimentoTestaAccount (accountUtenteLista *accountLista, char *nomeUtente, char *password, float saldo);
 void allocazioneAccountUtenteLista (char *nome, char *password, accountUtenteLista *tmp);
-void popolamentoFileAccount(char *nome, char *password);
+void popolamentoFileAccount(char *nome, char *password, float saldo);
 void registrazioneUtente();
 accountUtenteLista *loginUtente (accountUtenteLista  *utenteLoggato, char *nomeUtente, char *password, accountUtenteLista *accountLista);
 accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista);
@@ -56,7 +58,7 @@ void stampaAbbigliamentoLista (abbigliamentoLista *abbigliamento);
 
 //GESTIONE DELLE LISTE
 //lista degli account
-accountUtenteLista *creaNodoAccount (char *nomeUtente, char *password){
+accountUtenteLista *creaNodoAccount (char *nomeUtente, char *password, float saldo){
     accountUtenteLista *tmp = NULL;
     tmp = malloc (sizeof (accountUtenteLista));
     if(tmp == NULL)
@@ -66,15 +68,16 @@ accountUtenteLista *creaNodoAccount (char *nomeUtente, char *password){
         allocazioneAccountUtenteLista(nomeUtente,password, tmp);
         strcpy(tmp->nomeUtente,nomeUtente);
         strcpy(tmp ->password,password);
+        tmp ->bilancio_conto = saldo;
     }
     return tmp;
 }
-accountUtenteLista *inserimentoTestaAccount (accountUtenteLista *accountLista, char *nomeUtente, char *password){
+accountUtenteLista *inserimentoTestaAccount (accountUtenteLista *accountLista, char *nomeUtente, char *password, float saldo){
     accountUtenteLista *tmp = NULL;
 
     if(accountLista == NULL)
-        return creaNodoAccount(nomeUtente, password);
-    tmp = creaNodoAccount(nomeUtente, password);
+        return creaNodoAccount(nomeUtente, password, saldo);
+    tmp = creaNodoAccount(nomeUtente, password, saldo);
     tmp ->next = accountLista;
     return tmp;
 }
@@ -83,12 +86,12 @@ accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista){
     FILE *fp = NULL;
     char stringa[MAX];
     char nome[MAX], password[MAX];
-
+    float saldo;
     fp = fopen("account.txt", "r");
     accountLista = freeAccount(accountLista); //Causa crash
     while(fgets(stringa, MAX, fp) != NULL){
-        sscanf(stringa, "%s %s", nome, password);
-        accountLista = inserimentoTestaAccount(accountLista, nome, password);
+        sscanf(stringa, "%s %s %f", nome, password, &saldo);
+        accountLista = inserimentoTestaAccount(accountLista, nome, password, saldo);
     }
     fclose(fp);
     return accountLista;
@@ -261,6 +264,12 @@ scarpeLista *freeScarpe (scarpeLista *testa){
 }
 
 //gestione account utente
+void stampaAccount(accountUtenteLista *testa){
+    while(testa != NULL){
+        printf("%s %s %.2f\n", testa ->nomeUtente, testa ->password, testa ->bilancio_conto);
+        testa = testa ->next;
+    }
+}
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password){
     accountUtenteLista *tmp = accountLista;
 
@@ -274,25 +283,35 @@ accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista,
 }
 
 //GESTIONE DEI FILE
-void popolamentoFileAccount(char *nome, char *password){
+void popolamentoFileAccount(char *nome, char *password, float saldo){
     FILE *fp = NULL;
 
     fp = fopen("account.txt", "a");
-    fprintf(fp, "%s %s\n", nome, password);
+    fprintf(fp, "%s %s %.2f\n", nome, password, saldo);
     fclose(fp);
 }
 void registrazioneUtente(){
 
     char nome[MAX], password[MAX];
-
+    float saldo;
     printf("Inserisci il tuo nome\n");
     fgets(nome, MAX, stdin);
     printf("Inserisci la tua password\n");
     fgets(password, MAX, stdin);
+    do {
+        printf("Inserisci saldo al tuo conto: ");
+        scanf("%f", &saldo);
+        if(saldo < 0) {
+            printf("Il tuo saldo non può essere negativo\nRiprovare\n");
+            system("pause");
+        }
+    }while(saldo < 0);
 
     nome[strcspn(nome, "\n")] = 0; //Si mangia lo \n della fgets
     password[strcspn(password, "\n")] = 0;
-    popolamentoFileAccount(nome, password);
+    popolamentoFileAccount(nome, password, saldo);
+    printf("\nUtente registrato con successo\nTrasferimento a schermata iniziale in corso...\n");
+    system("pause");
 }
 void gestioneMagazzino(){
     char nomeCapo[MAX];
@@ -318,7 +337,7 @@ void gestioneMagazzino(){
             scanf("%f", &prezzo);
             printf("Inserisci quantita: ");
             scanf("%d", &disponibilita);
-            fprintf(abiti, "%f %d %s", prezzo, disponibilita, nomeCapo);
+            fprintf(abiti, "%.2f %d %s", prezzo, disponibilita, nomeCapo);
             fclose(abiti);
         }
         if(scelta == 2) {
@@ -329,7 +348,7 @@ void gestioneMagazzino(){
             scanf("%f", &prezzo);
             printf("Inserisci quantita: ");
             scanf("%d", &disponibilita);
-            fprintf(scarpe, "%f %d %s", prezzo, disponibilita, nomeScarpe);
+            fprintf(scarpe, "%.2f %d %s", prezzo, disponibilita, nomeScarpe);
             fclose(scarpe);
         }
         printf("Seleziona un operazione (0 per annullare l'operazione)\n1 Per inserire capi d'abbgliamento\n2 Per inserire scarpe\nScelta : ");
@@ -341,6 +360,16 @@ void gestioneMagazzino(){
         }
     }
 
+}
+void aggiornaAccountDB(accountUtenteLista *accountLista){
+    accountUtenteLista *tmp = accountLista;
+    FILE *fp = NULL;
+
+    fp = fopen("account.txt", "w");
+    while(tmp != NULL){
+        fprintf(fp, "%s %s %.2f\n", tmp ->nomeUtente, tmp ->password, tmp ->bilancio_conto);
+        tmp = tmp ->next;
+    }
 }
 
 //GESTIONE INTERFACCIA
@@ -364,7 +393,7 @@ accountUtenteLista *loginUtente (accountUtenteLista  *utenteLoggato, char *nomeU
         return NULL;
     }
 }
-void acquistoProdotti(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, int contatore){
+void sceltaArticoli(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, int contatore, accountUtenteLista *utenteLoggato){
     int scelta;
     abbigliamentoLista *tmpAbbigliamento = abbigliamento;
     scarpeLista *tmpScarpe = scarpe;
@@ -374,18 +403,28 @@ void acquistoProdotti(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, in
 
     if(scelta <= contatore) {
         while (tmpAbbigliamento != NULL) {
-            if (scelta == tmpAbbigliamento->id)
-                printf("Hai acquistato %s", tmpAbbigliamento->nomeAbbigliamento);
+            if (scelta == tmpAbbigliamento->id) {
+                if(utenteLoggato ->bilancio_conto >= tmpAbbigliamento ->prezzo) {
+                    printf("Hai acquistato %s", tmpAbbigliamento->nomeAbbigliamento);
+                    utenteLoggato ->bilancio_conto -= tmpAbbigliamento ->prezzo;
+                }
+            }
             tmpAbbigliamento = tmpAbbigliamento->next;
         }
     }else{
         while(tmpScarpe != NULL){
-            if(scelta == tmpScarpe ->id)
-                printf("Hai acquistato %s", tmpScarpe ->nomeScarpe);
+            if(scelta == tmpScarpe ->id) {
+                if(utenteLoggato ->bilancio_conto >= tmpScarpe ->prezzo) {
+                    printf("Hai acquistato %s", tmpScarpe->nomeScarpe);
+                    utenteLoggato->bilancio_conto -= tmpScarpe->prezzo;
+                }
+            }
             tmpScarpe = tmpScarpe ->next;
         }
     }
 }
+
+
 void *operazioni (accountUtenteLista *utenteLoggato){
 
     scarpeLista *scarpe = NULL;
@@ -405,7 +444,7 @@ void *operazioni (accountUtenteLista *utenteLoggato){
                 scarpe = popolamentoScarpeLista(scarpe, contatore);
                 stampaAbbigliamentoLista(abbigliamento);
                 stampaScarpeLista(scarpe);
-                acquistoProdotti(abbigliamento, scarpe, contatore); //INSERIRE FUNZIONE DI ACQUISTO ARTICOLO
+                sceltaArticoli(abbigliamento, scarpe, contatore, utenteLoggato); //INSERIRE FUNZIONE DI ACQUISTO ARTICOLO
                 break;
             case 2:
                 printf("Inserisci l'importo");
@@ -460,6 +499,8 @@ int main() {
                 while(utenteloggato == NULL)//Inserisci le credenziali ogni volta che fallisce il login.
                     utenteloggato = loginUtente(utenteloggato, nome, pass, accountLista);
                 operazioni(utenteloggato);
+                aggiornaAccountDB(accountLista);
+                stampaAccount(accountLista);
                 break;
             case 2:
                 printf("Hai selezionato la registrazione utente\n");

@@ -1,3 +1,4 @@
-23.000000 2 Maglia siummica
-98.000000 4 maglia lella
-23.000000 0 maglia finita
+15.99 4 Vans "Off the Wall" Shirt
+12.00 0 Jeans
+155.00 1 Levi's Strauss denim
+250.00 0 Hugo Boss Giacca ecopelle
