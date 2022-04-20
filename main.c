@@ -1,20 +1,18 @@
-/*
- * TO - DO
- * SE FACCIO LOGIN ED ESCO DALL'ACCOUNT, SE RIOLGGO NON MI FA SCEGLIERE L'ACCOUNT (NECESSARIA FREE DI UTENTELOGGATO)
- * IMPLEMENTARE COSA FARE IN CASO DI SALDO NON DISPONIBILE PER L'ACQUISTO
- * IMPLEMENTARE CARRELLO
+/* TO - DO
+ * SE FACCIO LOGIN ED ESCO DALL'ACCOUNT, SE RILOGGO NON MI CHIEDE DI INSERIRE USERNAME E PASSWORD
+ * IMPLEMENTARE ACQUISTO DI PRODOTTI NON DISPONIBILI
  */
 #include <stdio.h>
 #include <stdlib.h>
 
 //FILE progetto.h
 #define MAX 50
-#define TAGLIE 3
 
 typedef struct accountUtente_Lista{
     char *nomeUtente;
     char *password;
     float bilancio_conto;
+    char carrello[100];
     struct accountUtente_Lista *next;
 }accountUtenteLista;
 
@@ -45,7 +43,7 @@ accountUtenteLista *freeAccount (accountUtenteLista *testa);
 abbigliamentoLista *freeAbbigl (abbigliamentoLista *testa);
 scarpeLista *freeScarpe (scarpeLista *testa);
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password);
-void *operazioni (accountUtenteLista *utenteLoggato);
+void operazioni (accountUtenteLista *utenteLoggato);
 void allocazioneAbbigliamentoLista (char *nome,  abbigliamentoLista *tmp);
 void allocazioneScarpeLista (char *nome, scarpeLista *tmp);
 void stampaScarpeLista (scarpeLista *scarpe);
@@ -69,6 +67,7 @@ accountUtenteLista *creaNodoAccount (char *nomeUtente, char *password, float sal
         strcpy(tmp->nomeUtente,nomeUtente);
         strcpy(tmp ->password,password);
         tmp ->bilancio_conto = saldo;
+        strcpy(tmp ->carrello, "0");
     }
     return tmp;
 }
@@ -88,7 +87,7 @@ accountUtenteLista *inserimentoAccountLista (accountUtenteLista *accountLista){
     char nome[MAX], password[MAX];
     float saldo;
     fp = fopen("account.txt", "r");
-    accountLista = freeAccount(accountLista); //Causa crash
+    accountLista = freeAccount(accountLista);
     while(fgets(stringa, MAX, fp) != NULL){
         sscanf(stringa, "%s %s %f", nome, password, &saldo);
         accountLista = inserimentoTestaAccount(accountLista, nome, password, saldo);
@@ -272,10 +271,16 @@ void stampaAccount(accountUtenteLista *testa){
 }
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password){
     accountUtenteLista *tmp = accountLista;
+    accountUtenteLista *copia = NULL;
 
     while(tmp != NULL){
         if((strcmp(nomeUtente, tmp->nomeUtente) == 0) && (strcmp(password, tmp ->password) == 0)) {
-            return tmp;
+            copia = malloc(sizeof(accountUtenteLista));
+            copia ->bilancio_conto = tmp ->bilancio_conto;
+            copia ->next = tmp ->next;
+            copia ->nomeUtente = tmp ->nomeUtente;
+            copia ->password = tmp ->password;
+            return copia;
         }
         tmp = tmp->next;
     }
@@ -319,9 +324,7 @@ void gestioneMagazzino(){
     char nomeScarpe[MAX];
     int disponibilita;
     FILE *abiti = NULL;
-    FILE *abitiTaglie = NULL;
     FILE *scarpe = NULL;
-    FILE *scarpeTaglie = NULL;
 
     int scelta = 1;
 
@@ -407,6 +410,12 @@ void sceltaArticoli(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, int 
                 if(utenteLoggato ->bilancio_conto >= tmpAbbigliamento ->prezzo) {
                     printf("Hai acquistato %s", tmpAbbigliamento->nomeAbbigliamento);
                     utenteLoggato ->bilancio_conto -= tmpAbbigliamento ->prezzo;
+                    if(strcmp(utenteLoggato ->carrello, tmpAbbigliamento ->nomeAbbigliamento) == 0)
+                        strcpy(utenteLoggato ->carrello, "0");
+                }else{
+                    printf("Saldo insufficiente...\nRicarica il conto e riprova\n");
+                    strcpy(utenteLoggato ->carrello, tmpAbbigliamento ->nomeAbbigliamento);
+                    system("pause");
                 }
             }
             tmpAbbigliamento = tmpAbbigliamento->next;
@@ -417,6 +426,12 @@ void sceltaArticoli(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, int 
                 if(utenteLoggato ->bilancio_conto >= tmpScarpe ->prezzo) {
                     printf("Hai acquistato %s", tmpScarpe->nomeScarpe);
                     utenteLoggato->bilancio_conto -= tmpScarpe->prezzo;
+                    if(strcmp(utenteLoggato ->carrello, tmpScarpe ->nomeScarpe) == 0)
+                        strcpy(utenteLoggato ->carrello, "0");
+                }else{
+                    printf("Saldo insufficiente...\nRicarica il conto e riprova\n");
+                    strcpy(utenteLoggato ->carrello, tmpScarpe ->nomeScarpe);
+                    system("pause");
                 }
             }
             tmpScarpe = tmpScarpe ->next;
@@ -424,8 +439,7 @@ void sceltaArticoli(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, int 
     }
 }
 
-
-void *operazioni (accountUtenteLista *utenteLoggato){
+void operazioni (accountUtenteLista *utenteLoggato){
 
     scarpeLista *scarpe = NULL;
     abbigliamentoLista  *abbigliamento = NULL;
@@ -439,19 +453,18 @@ void *operazioni (accountUtenteLista *utenteLoggato){
         fflush(stdin);
         switch (scelta) {
             case 1:
-                printf("DEBUGGING PURPOSE\n\n\n");
                 abbigliamento = popolamentoAbbigliamentoLista(abbigliamento, &contatore);
                 scarpe = popolamentoScarpeLista(scarpe, contatore);
                 stampaAbbigliamentoLista(abbigliamento);
                 stampaScarpeLista(scarpe);
-                sceltaArticoli(abbigliamento, scarpe, contatore, utenteLoggato); //INSERIRE FUNZIONE DI ACQUISTO ARTICOLO
+                sceltaArticoli(abbigliamento, scarpe, contatore, utenteLoggato);
                 break;
             case 2:
                 printf("Inserisci l'importo");
                 scanf("%f", &importo);
                 utenteLoggato ->bilancio_conto += importo;
                 break;
-            case 3: {
+            case 3:
                 printf("Preleva i soldi dal tuo conto\n");
                 scanf("%f", &importo);
                 if (utenteLoggato ->bilancio_conto >= importo)
@@ -459,7 +472,12 @@ void *operazioni (accountUtenteLista *utenteLoggato){
                 else
                     printf("Impossibile completare l'operazione...\nBilancio non sufficiente\n");
                 break;
-            }
+            case 4:
+                if(strcmp(utenteLoggato ->carrello,"0") == 0)
+                    printf("Il carrello e' vuoto\n");
+                else
+                    printf("%s", utenteLoggato ->carrello);
+                break;
             case 0:
                 printf("Logout dall'account in corso...\n");
                 break;
@@ -468,9 +486,6 @@ void *operazioni (accountUtenteLista *utenteLoggato){
         }
         system("pause");
     }while(scelta != 0);
-
-     //scarpe = freeScarpe(scarpe);
-    // abbigliamento = freeAbbigl(abbigliamento);
 }
 
 //FILE main.c
@@ -480,6 +495,8 @@ int main() {
     accountUtenteLista *utenteloggato = NULL;//lista che tiene salvati i dati dell'account che ha effettuato l'accesso
     char nome[MAX];
     char pass[MAX];
+    int passAmministratore = 180199;
+    int passAmm;
     int scelta;
 
     do {
@@ -507,8 +524,13 @@ int main() {
                 registrazioneUtente();
                 break;
             case 3:
-                printf("Hai selezionato l'accesso amministratore\n");
-                gestioneMagazzino();
+                printf("Inserisci password amministratore: ");
+                scanf("%d", &passAmm);
+                if(passAmm == passAmministratore) {
+                    printf("Hai selezionato l'accesso amministratore\n");
+                    gestioneMagazzino();
+                }else
+                    printf("Password amministratore sbagliata\nUscita in corso...\n");
                 break;
             case -1:
                 printf("Chiusura negozio in corso...\nTorna a trovarci presto!!!\n");
@@ -517,6 +539,7 @@ int main() {
                 printf("\nHai inserito un operazione sconosciuta...\nReinserisci l'operazione da eseguire.\n");
                 break;
         }
+        system("pause");
     }while(scelta != -1);
 
 }
