@@ -43,7 +43,7 @@ accountUtenteLista *freeAccount (accountUtenteLista *testa);
 abbigliamentoLista *freeAbbigl (abbigliamentoLista *testa);
 scarpeLista *freeScarpe (scarpeLista *testa);
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password);
-void operazioni (accountUtenteLista *utenteLoggato);
+void operazioni (accountUtenteLista *utenteLoggato, accountUtenteLista *accountLista);
 void allocazioneAbbigliamentoLista (char *nome,  abbigliamentoLista *tmp);
 void allocazioneScarpeLista (char *nome, scarpeLista *tmp);
 void stampaScarpeLista (scarpeLista *scarpe);
@@ -174,7 +174,7 @@ void stampaAbbigliamentoLista (abbigliamentoLista *abbigliamento){
         if(abbigliamento ->disponibilita >0)
             printf("Disponibile\n");
         else
-            printf("Ordinabile\n");
+            printf("Non disponibile\n");
         abbigliamento = abbigliamento ->next;
     }
     printf("\n");
@@ -222,8 +222,6 @@ scarpeLista *popolamentoScarpeLista(scarpeLista *scarpe, int contatore){
     char nome[100];
     int disponibilita;
     float prezzo;
-    int id = contatore;
-    printf("stampa contatore %d", contatore);
     fp = fopen("scarpe.txt", "r");
     scarpe = freeScarpe(scarpe);
     while(fgets(stringa, 100, fp) != NULL){
@@ -240,7 +238,7 @@ void stampaScarpeLista (scarpeLista *scarpe){
         if(scarpe ->disponibilita > 0)
             printf("Disponibile\n");
         else
-            printf("Ordinabile\n");
+            printf("Non disponibile\n");
         scarpe = scarpe ->next;
     }
     printf("\n");
@@ -261,9 +259,28 @@ scarpeLista *freeScarpe (scarpeLista *testa){
     }
     return NULL;
 }
+void aggiornaMagazzino (scarpeLista *scarpe, abbigliamentoLista *abbigliamento){
+    FILE *fpScarpe = NULL, *fpAbiti = NULL;
 
+    //aggiornamento file scarpe
+    fpScarpe = fopen("scarpe.txt", "w");
+    while(scarpe != NULL){
+        fprintf(fpScarpe, "%.2f %d %s\n", scarpe ->prezzo, scarpe ->disponibilita, scarpe ->nomeScarpe);
+        scarpe = scarpe ->next;
+    }
+    fclose(fpScarpe);
+
+    //aggiornamento file abiti
+    fpAbiti = fopen("abiti.txt", "w");
+    while(abbigliamento != NULL){
+        fprintf(fpAbiti, "%.2f %d %s\n", abbigliamento ->prezzo, abbigliamento ->disponibilita, abbigliamento ->nomeAbbigliamento);
+        abbigliamento = abbigliamento ->next;
+    }
+    fclose(fpAbiti);
+}
 //gestione account utente
 void stampaAccount(accountUtenteLista *testa){
+    printf("Stampa degli account presenti\n");
     while(testa != NULL){
         printf("%s %s %.2f\n", testa ->nomeUtente, testa ->password, testa ->bilancio_conto);
         testa = testa ->next;
@@ -271,17 +288,10 @@ void stampaAccount(accountUtenteLista *testa){
 }
 accountUtenteLista *confrontoCredenzialiConDB (accountUtenteLista *accountLista, char *nomeUtente, char *password){
     accountUtenteLista *tmp = accountLista;
-    accountUtenteLista *copia = NULL;
 
     while(tmp != NULL){
-        if((strcmp(nomeUtente, tmp->nomeUtente) == 0) && (strcmp(password, tmp ->password) == 0)) {
-            copia = malloc(sizeof(accountUtenteLista));
-            copia ->bilancio_conto = tmp ->bilancio_conto;
-            copia ->next = tmp ->next;
-            copia ->nomeUtente = tmp ->nomeUtente;
-            copia ->password = tmp ->password;
-            return copia;
-        }
+        if((strcmp(nomeUtente, tmp->nomeUtente) == 0) && (strcmp(password, tmp ->password) == 0))
+            return tmp;
         tmp = tmp->next;
     }
         return NULL;
@@ -407,39 +417,49 @@ void sceltaArticoli(abbigliamentoLista *abbigliamento, scarpeLista *scarpe, int 
     if(scelta <= contatore) {
         while (tmpAbbigliamento != NULL) {
             if (scelta == tmpAbbigliamento->id) {
-                if(utenteLoggato ->bilancio_conto >= tmpAbbigliamento ->prezzo) {
-                    printf("Hai acquistato %s", tmpAbbigliamento->nomeAbbigliamento);
-                    utenteLoggato ->bilancio_conto -= tmpAbbigliamento ->prezzo;
-                    if(strcmp(utenteLoggato ->carrello, tmpAbbigliamento ->nomeAbbigliamento) == 0)
-                        strcpy(utenteLoggato ->carrello, "0");
-                }else{
-                    printf("Saldo insufficiente...\nRicarica il conto e riprova\n");
-                    strcpy(utenteLoggato ->carrello, tmpAbbigliamento ->nomeAbbigliamento);
-                    system("pause");
+                if(tmpAbbigliamento ->disponibilita > 0) {
+                    if (utenteLoggato->bilancio_conto >= tmpAbbigliamento->prezzo) {
+                        printf("Hai acquistato %s", tmpAbbigliamento->nomeAbbigliamento);
+                        utenteLoggato->bilancio_conto -= tmpAbbigliamento->prezzo;
+                        tmpAbbigliamento ->disponibilita -= 1;
+                        if (strcmp(utenteLoggato->carrello, tmpAbbigliamento->nomeAbbigliamento) == 0)
+                            strcpy(utenteLoggato->carrello, "0");
+                    } else {
+                        printf("Saldo insufficiente...\nRicarica il conto e riprova\n");
+                        strcpy(utenteLoggato->carrello, tmpAbbigliamento->nomeAbbigliamento);
+                        system("pause");
+                    }
                 }
+                else
+                    printf("Articolo non disponibile\n");
             }
             tmpAbbigliamento = tmpAbbigliamento->next;
         }
     }else{
         while(tmpScarpe != NULL){
             if(scelta == tmpScarpe ->id) {
-                if(utenteLoggato ->bilancio_conto >= tmpScarpe ->prezzo) {
-                    printf("Hai acquistato %s", tmpScarpe->nomeScarpe);
-                    utenteLoggato->bilancio_conto -= tmpScarpe->prezzo;
-                    if(strcmp(utenteLoggato ->carrello, tmpScarpe ->nomeScarpe) == 0)
-                        strcpy(utenteLoggato ->carrello, "0");
-                }else{
-                    printf("Saldo insufficiente...\nRicarica il conto e riprova\n");
-                    strcpy(utenteLoggato ->carrello, tmpScarpe ->nomeScarpe);
-                    system("pause");
-                }
+                if(tmpScarpe ->disponibilita >0) {
+                    if (utenteLoggato->bilancio_conto >= tmpScarpe->prezzo) {
+                        printf("Hai acquistato %s", tmpScarpe->nomeScarpe);
+                        utenteLoggato->bilancio_conto -= tmpScarpe->prezzo;
+                        tmpScarpe ->disponibilita -= 1;
+                        if (strcmp(utenteLoggato->carrello, tmpScarpe->nomeScarpe) == 0)
+                            strcpy(utenteLoggato->carrello, "0");
+                    } else {
+                        printf("Saldo insufficiente...\nRicarica il conto e riprova\n");
+                        strcpy(utenteLoggato->carrello, tmpScarpe->nomeScarpe);
+                        system("pause");
+                    }
+                }else
+                    printf("Articolo non disponibile\n");
             }
             tmpScarpe = tmpScarpe ->next;
         }
     }
+    aggiornaMagazzino(scarpe, abbigliamento);
 }
 
-void operazioni (accountUtenteLista *utenteLoggato){
+void operazioni (accountUtenteLista *utenteLoggato, accountUtenteLista *accountLista){
 
     scarpeLista *scarpe = NULL;
     abbigliamentoLista  *abbigliamento = NULL;
@@ -486,6 +506,7 @@ void operazioni (accountUtenteLista *utenteLoggato){
         }
         system("pause");
     }while(scelta != 0);
+    aggiornaAccountDB(accountLista);
 }
 
 //FILE main.c
@@ -513,10 +534,10 @@ int main() {
             case 1:
                 printf("Inserisci lo username e la password per accedere al tuo profilo\n");
                 accountLista = inserimentoAccountLista(accountLista);
+                printf("%s", utenteloggato);
                 while(utenteloggato == NULL)//Inserisci le credenziali ogni volta che fallisce il login.
                     utenteloggato = loginUtente(utenteloggato, nome, pass, accountLista);
-                operazioni(utenteloggato);
-                aggiornaAccountDB(accountLista);
+                operazioni(utenteloggato, accountLista);
                 stampaAccount(accountLista);
                 break;
             case 2:
